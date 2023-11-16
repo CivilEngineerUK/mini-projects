@@ -122,7 +122,7 @@ function_mapping = {"create_streamlit_code": create_streamlit_code}
 assistant_manager = AssistantManager()
 
 # Run assistant and process the result
-assistant_manager.run_assistant_and_process(
+completion = assistant_manager.run_assistant_and_process(
     """
 {
   "name": "DNV-RP-C203",
@@ -274,3 +274,14 @@ assistant_manager.run_assistant_and_process(
     function_mapping=function_mapping,
     model_name="gpt-4-1106-preview",
 )
+
+print(completion)
+
+# save to file
+script_path = "streamlit_app.py"
+with open(script_path, "w") as f:
+    f.write(completion.choices[0].message.function_call.arguments["app"])
+
+# use subprocess to run app
+import subprocess
+subprocess.run(f"streamlit run {script_path}", shell=True)

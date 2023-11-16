@@ -1,10 +1,12 @@
 """
 Title: Asynchronous OpenAI API Wrapper with Error Handling
 
-Description: A Python script to interact with the OpenAI API asynchronously, with built-in error handling and retry logic. This script is designed to handle multiple prompts with the ability to define custom functions for more complex queries.
+Description: A Python script to interact with the OpenAI API asynchronously, with built-in error handling and retry logic.
+This script is designed to handle multiple prompts with the ability to define custom functions for more complex queries.
 Created from guidance at: https://platform.openai.com/docs/guides/gpt/function-calling
 
 Updated: rev 1 - 16/11/2023 for new end point and gpt-4-1106-preview [openai==1.2.4]
+               - includes structural engineering beam formula schema and use of Pydantic and instructor
 
 Author: @CivilEngineerUK
 """
@@ -12,6 +14,10 @@ Author: @CivilEngineerUK
 import asyncio
 import json
 import openai
+from pydantic import BaseModel, Field
+from instructor import OpenAISchema
+from typing import List, Optional
+
 
 class OpenAI_ASync:
     def __init__(self):
@@ -77,8 +83,6 @@ class OpenAI_ASync:
                 temperature=temperature
             )
 
-
-
         response = await self.openai_api_call(api_call)
 
         return response
@@ -86,34 +90,28 @@ class OpenAI_ASync:
 
 # Usage example:
 
-# Define functions for function calling
-functions = [
-    {
-        "name": "get_current_weather",
-        "description": "Get the current weather in a given location",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "location": {
-                    "type": "string",
-                    "description": "The city and state, e.g. San Francisco, CA",
-                },
-                "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
-            },
-            "required": ["location"],
-        },
-    }
-]
+# create simple schema for a mathematical expression
+class Variable(BaseModel):
+    variable: str = Field(..., description="Variable name")
+    value: Optional[str] = Field(..., description="Variable value")
+    unit: str = Field(..., description="Variable unit")
 
+class SimpleCalculation(OpenAISchema):
+    expression: str = Field(..., description="Expression to calculate")
+    lead_variable: Variable = Field(..., description="Lead variable. You must calculate the value using the 'expression' and 'values'")
+    variables: List[Variable] = Field(..., description="List of variables")
+
+functions = [SimpleCalculation.openai_schema]
 
 # Create an instance of the OpenAI_ASync class
 openai_async = OpenAI_ASync()
 
 # Define the prompts
+beam = "5m simply supported beam with a central point load of P = 10kN and constant EI"
 prompts = [
-    "What's the weather like in Boston?",
-    "Weather in Seattle?",
-    "Is it sunny in London?"
+    f"Bending moment formula: {beam}",
+    f"Deflection formula: {beam}",
+    f"Shear force formula: {beam}"
 ]
 
 # Define model

@@ -1,0 +1,4 @@
+pydantic==2.5.0
+streamlit
+instructor==0.3.4
+openai

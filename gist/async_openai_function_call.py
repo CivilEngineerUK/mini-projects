@@ -59,9 +59,7 @@ class OpenAI_ASync:
                                       function_call="auto", temperature=0.0):
         tasks = [self.create_chat_completion(prompt, model, functions, function_call,
                                              temperature=temperature) for prompt in prompts]
-        responses = await asyncio.gather(*tasks, return_exceptions=True)
-
-        return responses
+        return await asyncio.gather(*tasks, return_exceptions=True)
 
     async def create_chat_completion(self, prompt, model="gpt-3.5-turbo-0613", functions=None, function_call="auto",
                                      temperature=0.0):

@@ -116,17 +116,15 @@ client = openai.OpenAI()
 
 # create the openai api call function
 def call_openai(prompt: str, model: str, response_model, system_prompt: str, temperature: float):
-    completion = client.chat.completions.create(
+    return client.chat.completions.create(
         model=model,
         temperature=temperature,
         functions=[response_model.openai_schema],
         messages=[
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": prompt}
+            {"role": "user", "content": prompt},
         ],
     )
-
-    return completion
 
 
 # specify the model

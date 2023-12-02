@@ -59,50 +59,48 @@ def get_completion(message, agent, funcs, thread):
     )
 
     while True:
-      # wait until run completes
-      while run.status in ['queued', 'in_progress']:
-        run = client.beta.threads.runs.retrieve(
-          thread_id=thread.id,
-          run_id=run.id
-        )
-        time.sleep(1)
-
-      # function execution
-      if run.status == "requires_action":
-        tool_calls = run.required_action.submit_tool_outputs.tool_calls
-        tool_outputs = []
-        for tool_call in tool_calls:
-          wprint('\033[31m' + str(tool_call.function), '\033[0m')
-          # find the tool to be executed
-          func = next(iter([func for func in funcs if func.__name__ == tool_call.function.name]))
-
-          try:
-            # init tool
-            func = func(**eval(tool_call.function.arguments))
-            # get outputs from the tool
-            output = func.run()
-          except Exception as e:
-            output = "Error: " + str(e)
-
-          wprint(f"\033[33m{tool_call.function.name}: ", output, '\033[0m')
-          tool_outputs.append({"tool_call_id": tool_call.id, "output": output})
-
-        # submit tool outputs
-        run = client.beta.threads.runs.submit_tool_outputs(
+        # wait until run completes
+        while run.status in ['queued', 'in_progress']:
+          run = client.beta.threads.runs.retrieve(
             thread_id=thread.id,
-            run_id=run.id,
-            tool_outputs=tool_outputs
-        )
-      # error
-      elif run.status == "failed":
-        raise Exception("Run Failed. Error: ", run.last_error)
-      # return assistant message
-      else:
-        messages = client.beta.threads.messages.list(
-          thread_id=thread.id
-        )
-        message = messages.data[0].content[0].text.value
-        return message
+            run_id=run.id
+          )
+          time.sleep(1)
+
+              # function execution
+        if run.status == "requires_action":
+            tool_calls = run.required_action.submit_tool_outputs.tool_calls
+            tool_outputs = []
+            for tool_call in tool_calls:
+                wprint('\033[31m' + str(tool_call.function), '\033[0m')
+                # find the tool to be executed
+                func = next(iter([func for func in funcs if func.__name__ == tool_call.function.name]))
+
+                try:
+                    # init tool
+                    func = func(**eval(tool_call.function.arguments))
+                    # get outputs from the tool
+                    output = func.run()
+                except Exception as e:
+                    output = f"Error: {str(e)}"
+
+                wprint(f"\033[33m{tool_call.function.name}: ", output, '\033[0m')
+                tool_outputs.append({"tool_call_id": tool_call.id, "output": output})
+
+            # submit tool outputs
+            run = client.beta.threads.runs.submit_tool_outputs(
+                thread_id=thread.id,
+                run_id=run.id,
+                tool_outputs=tool_outputs
+            )
+        elif run.status == "failed":
+          raise Exception("Run Failed. Error: ", run.last_error)
+        else:
+            messages = client.beta.threads.messages.list(
+              thread_id=thread.id
+            )
+            message = messages.data[0].content[0].text.value
+            return message
 
 from typing import List
 from pydantic import Field
@@ -142,7 +140,7 @@ class File(OpenAISchema):
         with open(self.file_name, "w") as f:
             f.write(self.body)
 
-        return "File written to " + self.file_name
+        return f"File written to {self.file_name}"
 
 from openai import OpenAI
 client = OpenAI(api_key=openai.api_key)
